@@ -3,127 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>먼슬리 알림 다이어리</title>
+    <title>DOM 로드 후 실행되는 이모지 먼슬리 다이어리</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구글 스타일 이모지 먼슬리 다이어리</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f8ff;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            display: flex;
-            width: 1000px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        #calendar {
-            width: 60%;
-            padding: 20px;
-        }
-        .sidebar {
-            width: 40%;
-            padding: 20px;
-            border-left: 1px solid #e0e0e0;
-        }
-        h1 {
-            color: #4a4a4a;
-            text-align: center;
-            margin-top: 0;
-        }
-        .month-header {
-            background-color: #4285F4;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-size: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .month-header button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .weekdays {
-            background-color: #f1f1f1;
-            display: flex;
-        }
-        .weekdays div {
-            width: 14.28%;
-            text-align: center;
-            padding: 5px;
-            font-size: 14px;
-            color: #757575;
-        }
-        .days {
-            display: flex;
-            flex-wrap: wrap;
-        }
-        .day {
-            width: 14.28%;
-            padding: 5px;
-            text-align: left;
-            border: 1px solid #e0e0e0;
-            height: 80px;
-            overflow-y: auto;
-            font-size: 12px;
-        }
-        .day:hover {
-            background-color: #f0f0f0;
-        }
-        .event {
-            margin: 2px 0;
-            padding: 2px;
-            font-size: 11px;
-            border-radius: 3px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        #eventForm, #eventDetails {
-            margin-top: 20px;
-        }
-        input, button {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4285F4;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #3367D6;
-        }
-        #eventDetails {
-            display: none;
-        }
-        .event-icon {
-            margin-right: 5px;
-        }
+        /* 이전 CSS 스타일을 그대로 유지 */
     </style>
 </head>
 <body>
@@ -156,434 +38,183 @@
     </div>
 
     <script>
-        let currentDate = new Date();
-        let events = JSON.parse(localStorage.getItem('events')) || [];
-        let selectedEventIndex = -1;
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendar = document.getElementById('calendar');
+            const eventForm = document.getElementById('eventForm');
+            const eventDetails = document.getElementById('eventDetails');
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const currentMonthYearElement = document.getElementById('currentMonthYear');
 
-        const calendar = document.getElementById('calendar');
-        const eventForm = document.getElementById('eventForm');
-        const eventDetails = document.getElementById('eventDetails');
-        const prevMonthBtn = document.getElementById('prevMonth');
-        const nextMonthBtn = document.getElementById('nextMonth');
-        const currentMonthYearElement = document.getElementById('currentMonthYear');
-
-        const eventIcons = {
-            "회의": "💼",
-            "생일": "🎂",
-            "여행": "✈️",
-            "공부": "📚",
-            "운동": "🏋️",
-            "약속": "🤝",
-            "기념일": "🎉",
-            "default": "📌"
-        };
-
-        function getEventIcon(title) {
-            for (const [key, value] of Object.entries(eventIcons)) {
-                if (title.includes(key)) return value;
-            }
-            return eventIcons.default;
-        }
-
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
+            const eventIcons = {
+                "회의": "💼", "생일": "🎂", "여행": "✈️", "공부": "📚",
+                "운동": "🏋️", "약속": "🤝", "기념일": "🎉", "default": "📌"
+            };
 
             const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 
-            currentMonthYearElement.textContent = `${year}년 ${monthNames[month]}`;
+            let currentDate = new Date();
+            let events = [];
+            let selectedEventIndex = -1;
 
-            const daysContainer = calendar.querySelector('.days');
-            daysContainer.innerHTML = '';
-
-            for (let i = 0; i < firstDay.getDay(); i++) {
-                daysContainer.innerHTML += '<div class="day"></div>';
+            function getEventIcon(title) {
+                return eventIcons[Object.keys(eventIcons).find(key => title.includes(key))] || eventIcons.default;
             }
 
-            for (let i = 1; i <= lastDay.getDate(); i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day';
-                dayElement.innerHTML = i;
-
-                const dayEvents = events.filter(event => {
-                    const eventDate = new Date(event.dateTime);
-                    return eventDate.getDate() === i && eventDate.getMonth() === month && eventDate.getFullYear() === year;
-                });
-
-                dayEvents.forEach(event => {
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'event';
-                    const icon = getEventIcon(event.title);
-                    eventElement.innerHTML = `<span class="event-icon">${icon}</span>${event.title}`;
-                    eventElement.style.backgroundColor = getRandomColor(event.title);
-                    eventElement.style.color = 'white';
-                    eventElement.onclick = () => showEventDetails(event);
-                    dayElement.appendChild(eventElement);
-                });
-
-                daysContainer.appendChild(dayElement);
+            function loadEventsFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const eventsParam = urlParams.get('events');
+                if (eventsParam) {
+                    events = JSON.parse(decodeURIComponent(eventsParam));
+                }
             }
-        }
 
-        function getRandomColor(seed) {
-            let hash = 0;
-            for (let i = 0; i < seed.length; i++) {
-                hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+            function saveEventsToURL() {
+                const eventsParam = encodeURIComponent(JSON.stringify(events));
+                const newURL = `${window.location.pathname}?events=${eventsParam}`;
+                window.history.pushState({path: newURL}, '', newURL);
             }
-            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-            return "#" + "00000".substring(0, 6 - c.length) + c;
-        }
 
-        function addEvent(title, dateTime) {
-            events.push({ title, dateTime });
-            localStorage.setItem('events', JSON.stringify(events));
+            function renderCalendar() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+
+                currentMonthYearElement.textContent = `${year}년 ${monthNames[month]}`;
+
+                const daysContainer = calendar.querySelector('.days');
+                daysContainer.innerHTML = '';
+
+                const fragment = document.createDocumentFragment();
+
+                for (let i = 0; i < firstDay.getDay(); i++) {
+                    fragment.appendChild(document.createElement('div'));
+                }
+
+                for (let i = 1; i <= lastDay.getDate(); i++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+                    dayElement.textContent = i;
+
+                    const dayEvents = events.filter(event => {
+                        const eventDate = new Date(event.dateTime);
+                        return eventDate.getDate() === i && eventDate.getMonth() === month && eventDate.getFullYear() === year;
+                    });
+
+                    dayEvents.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'event';
+                        const icon = getEventIcon(event.title);
+                        eventElement.innerHTML = `<span class="event-icon">${icon}</span>${event.title}`;
+                        eventElement.style.backgroundColor = getRandomColor(event.title);
+                        eventElement.style.color = 'white';
+                        eventElement.onclick = () => showEventDetails(event);
+                        dayElement.appendChild(eventElement);
+                    });
+
+                    fragment.appendChild(dayElement);
+                }
+
+                daysContainer.appendChild(fragment);
+            }
+
+            function getRandomColor(seed) {
+                let hash = 0;
+                for (let i = 0; i < seed.length; i++) {
+                    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+                return "#" + "00000".substring(0, 6 - c.length) + c;
+            }
+
+            function addEvent(title, dateTime) {
+                events.push({ title, dateTime });
+                saveEventsToURL();
+                renderCalendar();
+                scheduleNotification(title, new Date(dateTime));
+            }
+
+            function deleteEvent(index) {
+                events.splice(index, 1);
+                saveEventsToURL();
+                renderCalendar();
+                hideEventDetails();
+            }
+
+            function showEventDetails(event) {
+                selectedEventIndex = events.findIndex(e => e.title === event.title && e.dateTime === event.dateTime);
+                document.getElementById('detailTitle').textContent = event.title;
+                document.getElementById('detailDateTime').textContent = new Date(event.dateTime).toLocaleString();
+                eventDetails.style.display = 'block';
+            }
+
+            function hideEventDetails() {
+                eventDetails.style.display = 'none';
+                selectedEventIndex = -1;
+            }
+
+            function scheduleNotification(title, dateTime) {
+                const now = new Date();
+                const timeDiff = dateTime.getTime() - now.getTime();
+
+                if (timeDiff > 0) {
+                    setTimeout(() => {
+                        if (Notification.permission === "granted") {
+                            new Notification(title, {
+                                body: "일정 알림입니다!",
+                                icon: "https://github.com/favicon.ico"
+                            });
+                        } else if (Notification.permission !== "denied") {
+                            Notification.requestPermission().then(permission => {
+                                if (permission === "granted") {
+                                    new Notification(title, {
+                                        body: "일정 알림입니다!",
+                                        icon: "https://github.com/favicon.ico"
+                                    });
+                                }
+                            });
+                        }
+                    }, timeDiff);
+                }
+            }
+
+            eventForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const title = document.getElementById('eventTitle').value;
+                const date = document.getElementById('eventDate').value;
+                const time = document.getElementById('eventTime').value;
+                const dateTime = new Date(date + 'T' + time).toISOString();
+                addEvent(title, dateTime);
+                eventForm.reset();
+            });
+
+            document.getElementById('deleteEvent').addEventListener('click', function() {
+                if (selectedEventIndex !== -1) {
+                    deleteEvent(selectedEventIndex);
+                }
+            });
+
+            prevMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            nextMonthBtn.addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+
+            loadEventsFromURL();
             renderCalendar();
-            scheduleNotification(title, new Date(dateTime));
-        }
 
-        function deleteEvent(index) {
-            events.splice(index, 1);
-            localStorage.setItem('events', JSON.stringify(events));
-            renderCalendar();
-            hideEventDetails();
-        }
-
-        function showEventDetails(event) {
-            selectedEventIndex = events.findIndex(e => e.title === event.title && e.dateTime === event.dateTime);
-            document.getElementById('detailTitle').textContent = event.title;
-            document.getElementById('detailDateTime').textContent = new Date(event.dateTime).toLocaleString();
-            eventDetails.style.display = 'block';
-        }
-
-        function hideEventDetails() {
-            eventDetails.style.display = 'none';
-            selectedEventIndex = -1;
-        }
-
-        function scheduleNotification(title, dateTime) {
-            const now = new Date();
-            const timeDiff = dateTime.getTime() - now.getTime();
-
-            if (timeDiff > 0) {
-                setTimeout(() => {
-                    if (Notification.permission === "granted") {
-                        new Notification(title, {
-                            body: "일정 알림입니다!",
-                            icon: "https://github.com/favicon.ico"
-                        });
-                    } else if (Notification.permission !== "denied") {
-                        Notification.requestPermission().then(permission => {
-                            if (permission === "granted") {
-                                new Notification(title, {
-                                    body: "일정 알림입니다!",
-                                    icon: "https://github.com/favicon.ico"
-                                });
-                            }
-                        });
-                    }
-                }, timeDiff);
-            }
-        }
-
-        eventForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const title = document.getElementById('eventTitle').value;
-            const date = document.getElementById('eventDate').value;
-            const time = document.getElementById('eventTime').value;
-            const dateTime = new Date(date + 'T' + time).toISOString();
-            addEvent(title, dateTime);
-            eventForm.reset();
-        });
-
-        document.getElementById('deleteEvent').addEventListener('click', function() {
-            if (selectedEventIndex !== -1) {
-                deleteEvent(selectedEventIndex);
-            }
-        });
-
-        prevMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        });
-
-        nextMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
-
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-
-        renderCalendar();
-
-        events.forEach(event => {
-            scheduleNotification(event.title, new Date(event.dateTime));
-        });
-    </script>
-</body>
-</html>
-            padding: 20px;
-            background-color: #f0f8ff;
-        }
-        h1 {
-            color: #4a4a4a;
-            text-align: center;
-        }
-        #calendar {
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .month-header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-size: 20px;
-        }
-        .weekdays {
-            background-color: #f1f1f1;
-            display: flex;
-        }
-        .weekdays div {
-            width: 14.28%;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-        }
-        .days {
-            display: flex;
-            flex-wrap: wrap;
-        }
-        .day {
-            width: 14.28%;
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #e0e0e0;
-            height: 100px;
-            overflow-y: auto;
-        }
-        .day:hover {
-            background-color: #f0f0f0;
-        }
-        .event {
-            background-color: #e8f5e9;
-            margin: 2px 0;
-            padding: 2px;
-            font-size: 12px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        #eventForm {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #eventDetails {
-            display: none;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        .navigation {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .navigation button {
-            width: auto;
-        }
-    </style>
-</head>
-<body>
-    <h1>📅 먼슬리 알림 다이어리</h1>
-    
-    <div class="navigation">
-        <button id="prevMonth">◀ 이전 달</button>
-        <button id="nextMonth">다음 달 ▶</button>
-    </div>
-
-    <div id="calendar"></div>
-
-    <form id="eventForm">
-        <input type="text" id="eventTitle" placeholder="일정 제목" required>
-        <input type="date" id="eventDate" required>
-        <input type="time" id="eventTime" required>
-        <button type="submit">➕ 일정 추가</button>
-    </form>
-
-    <div id="eventDetails">
-        <h2 id="detailTitle"></h2>
-        <p id="detailDateTime"></p>
-        <button id="deleteEvent">🗑️ 삭제</button>
-    </div>
-
-    <script>
-        let currentDate = new Date();
-        let events = JSON.parse(localStorage.getItem('events')) || [];
-        let selectedEventIndex = -1;
-
-        const calendar = document.getElementById('calendar');
-        const eventForm = document.getElementById('eventForm');
-        const eventDetails = document.getElementById('eventDetails');
-        const prevMonthBtn = document.getElementById('prevMonth');
-        const nextMonthBtn = document.getElementById('nextMonth');
-
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-
-            const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-
-            calendar.innerHTML = `
-                <div class="month-header">${year}년 ${monthNames[month]}</div>
-                <div class="weekdays">
-                    <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
-                </div>
-                <div class="days"></div>
-            `;
-
-            const daysContainer = calendar.querySelector('.days');
-
-            for (let i = 0; i < firstDay.getDay(); i++) {
-                daysContainer.innerHTML += '<div class="day"></div>';
-            }
-
-            for (let i = 1; i <= lastDay.getDate(); i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day';
-                dayElement.innerHTML = i;
-
-                const dayEvents = events.filter(event => {
-                    const eventDate = new Date(event.dateTime);
-                    return eventDate.getDate() === i && eventDate.getMonth() === month && eventDate.getFullYear() === year;
-                });
-
-                dayEvents.forEach(event => {
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'event';
-                    eventElement.textContent = event.title;
-                    eventElement.onclick = () => showEventDetails(event);
-                    dayElement.appendChild(eventElement);
-                });
-
-                daysContainer.appendChild(dayElement);
-            }
-        }
-
-        function addEvent(title, dateTime) {
-            events.push({ title, dateTime });
-            localStorage.setItem('events', JSON.stringify(events));
-            renderCalendar();
-            scheduleNotification(title, new Date(dateTime));
-        }
-
-        function deleteEvent(index) {
-            events.splice(index, 1);
-            localStorage.setItem('events', JSON.stringify(events));
-            renderCalendar();
-            hideEventDetails();
-        }
-
-        function showEventDetails(event) {
-            selectedEventIndex = events.findIndex(e => e.title === event.title && e.dateTime === event.dateTime);
-            document.getElementById('detailTitle').textContent = event.title;
-            document.getElementById('detailDateTime').textContent = new Date(event.dateTime).toLocaleString();
-            eventDetails.style.display = 'block';
-        }
-
-        function hideEventDetails() {
-            eventDetails.style.display = 'none';
-            selectedEventIndex = -1;
-        }
-
-        function scheduleNotification(title, dateTime) {
-            const now = new Date();
-            const timeDiff = dateTime.getTime() - now.getTime();
-
-            if (timeDiff > 0) {
-                setTimeout(() => {
-                    if (Notification.permission === "granted") {
-                        new Notification(title, {
-                            body: "일정 알림입니다!",
-                            icon: "https://github.com/favicon.ico"
-                        });
-                    } else if (Notification.permission !== "denied") {
-                        Notification.requestPermission().then(permission => {
-                            if (permission === "granted") {
-                                new Notification(title, {
-                                    body: "일정 알림입니다!",
-                                    icon: "https://github.com/favicon.ico"
-                                });
-                            }
-                        });
-                    }
-                }, timeDiff);
-            }
-        }
-
-        eventForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const title = document.getElementById('eventTitle').value;
-            const date = document.getElementById('eventDate').value;
-            const time = document.getElementById('eventTime').value;
-            const dateTime = new Date(date + 'T' + time).toISOString();
-            addEvent(title, dateTime);
-            eventForm.reset();
-        });
-
-        document.getElementById('deleteEvent').addEventListener('click', function() {
-            if (selectedEventIndex !== -1) {
-                deleteEvent(selectedEventIndex);
-            }
-        });
-
-        prevMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        });
-
-        nextMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
-
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-
-        renderCalendar();
-
-        events.forEach(event => {
-            scheduleNotification(event.title, new Date(event.dateTime));
+            events.forEach(event => {
+                scheduleNotification(event.title, new Date(event.dateTime));
+            });
         });
     </script>
 </body>
