@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages 알림 다이어리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #events {
+            margin-top: 20px;
+        }
+        .event {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>GitHub Pages 알림 다이어리 📅</h1>
+    
+    <form id="eventForm">
+        <input type="text" id="eventTitle" placeholder="일정 제목" required>
+        <input type="datetime-local" id="eventDateTime" required>
+        <button type="submit">일정 추가</button>
+    </form>
+
+    <div id="events"></div>
+
+    <script>
+        const eventForm = document.getElementById('eventForm');
+        const eventsContainer = document.getElementById('events');
+        let events = JSON.parse(localStorage.getItem('events')) || [];
+
+        function renderEvents() {
+            eventsContainer.innerHTML = '';
+            events.forEach((event, index) => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'event';
+                eventElement.textContent = `${event.title} - ${new Date(event.dateTime).toLocaleString()}`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '삭제';
+                deleteButton.onclick = () => deleteEvent(index);
+                eventElement.appendChild(deleteButton);
+                eventsContainer.appendChild(eventElement);
+            });
+        }
+
+        function addEvent(title, dateTime) {
+            events.push({ title, dateTime });
+            localStorage.setItem('events', JSON.stringify(events));
+            renderEvents();
+            scheduleNotification(title, new Date(dateTime));
+        }
+
+        function deleteEvent(index) {
+            events.splice(index, 1);
+            localStorage.setItem('events', JSON.stringify(events));
+            renderEvents();
+        }
+
+        function scheduleNotification(title, dateTime) {
+            const now = new Date();
+            const timeDiff = dateTime.getTime() - now.getTime();
+
+            if (timeDiff > 0) {
+                setTimeout(() => {
+                    if (Notification.permission === "granted") {
+                        new Notification(title, {
+                            body: "일정 알림입니다!",
+                            icon: "https://github.com/favicon.ico"
+                        });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification(title, {
+                                    body: "일정 알림입니다!",
+                                    icon: "https://github.com/favicon.ico"
+                                });
+                            }
+                        });
+                    }
+                }, timeDiff);
+            }
+        }
+
+        eventForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const title = document.getElementById('eventTitle').value;
+            const dateTime = document.getElementById('eventDateTime').value;
+            addEvent(title, dateTime);
+            eventForm.reset();
+        });
+
+        // 페이지 로드 시 알림 권한 요청 및 이벤트 렌더링
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+        renderEvents();
+
+        // 페이지 로드 시 기존 일정에 대한 알림 재설정
+        events.forEach(event => {
+            scheduleNotification(event.title, new Date(event.dateTime));
+        });
+    </script>
+</body>
+</html>
